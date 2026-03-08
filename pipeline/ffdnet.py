@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from utils import util
+from models.KAIR.utils import utils_image as util
 import torch
 from models.KAIR.models.network_ffdnet import FFDNet as net
 
@@ -48,7 +48,7 @@ class FFDNet:
         util.imsave(output, output_path)
 
     def run_ffdnet(self, noise_level: int):
-        img_paths = util.get_image_paths(self.input_dir)
+        img_paths = util.get_image_paths(str(self.input_dir))
         for img_path in img_paths:
             img_name = os.path.basename(img_path)
             save_path = self.export_dir / img_name

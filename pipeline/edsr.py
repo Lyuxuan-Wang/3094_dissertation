@@ -65,7 +65,7 @@ def run_edsr(
         temp_yml_path = Path(f.name)
 
     try:
-        cmd = ["python", "models/BasicSR/basicsr/test.py", "-opt", str(temp_yml_path)]
+        cmd = ["python", "basicsr/test.py", "-opt", str(temp_yml_path)]
         subprocess.run(cmd, cwd=str(basicsr_root), check=True)
 
         result_root = basicsr_root / "results" / exp_name / "visualization"
@@ -73,8 +73,7 @@ def run_edsr(
             raise RuntimeError(f"Cannot find results in {result_root}")
 
         dataset_name = ds_cfg.get("name", None)
-        candidate = result_root / dataset_name if dataset_name else None
-        res_dir = candidate
+        res_dir = result_root / dataset_name if dataset_name else result_root
 
         export_path.mkdir(parents=True, exist_ok=True)
         copied = _copy_images(res_dir, export_path)
