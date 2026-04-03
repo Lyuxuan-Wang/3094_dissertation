@@ -1,0 +1,2 @@
+id,filename,scene,view_id,input_type,scale,sigma,spp,model,task,psnr,ssim
+scene3_0_ffdnet,scene3_000_FFDNet_denoised.png,scene3,0,gaussian_noise,-,25,-,ffdnet,denoise,34.227,0.847
