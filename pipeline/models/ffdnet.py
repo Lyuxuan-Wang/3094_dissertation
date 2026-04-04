@@ -51,6 +51,6 @@ class FFDNet:
         img_paths = util.get_image_paths(str(self.input_dir))
         for img_path in img_paths:
             img_name = os.path.basename(img_path)
-            save_path = self.export_dir / f"{img_name}_FFDNet_denoised.png"
+            save_path = self.export_dir / f"{Path(img_name).stem}_FFDNet_denoised.png"
 
             self.denoise_image(img_path, save_path, noise_level)
