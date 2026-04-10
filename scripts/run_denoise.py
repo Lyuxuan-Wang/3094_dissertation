@@ -22,6 +22,8 @@ RESULTS_CSV = METADATA_DIR / "results.csv"
 
 FFDNET_PATH = PROJECT_ROOT / "models/KAIR/model_zoo/ffdnet_color.pth"
 
+GAUSSIAN_SIGMAS = [10, 25]
+
 CSV_FIELDS = [
     "id",
     "scene",
@@ -64,9 +66,15 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
         view_id = key[1]
         rows = groups[key]
 
-        # Gaussian noise
-        if "GN" in rows:
-            gn_row = rows["GN"]
+        for gn_sigma in GAUSSIAN_SIGMAS:
+            gn_row = None
+            for r in rows.values():
+                if r["type"] == "GN" and str(r["sigma"]) == str(gn_sigma):
+                    gn_row = r
+                    break
+            if gn_row is None:
+                continue
+
             noisy = np.array(Image.open(gn_row["path"]))
             sigma = int(gn_row["sigma"])
             stem = Path(gn_row["filename"]).stem

@@ -95,7 +95,7 @@ def run_edsr(
 
     return EDSRRunResult(
                     exp_name=exp_name,
-                    gt_image=gt_image,
+                    gt_path=gt_image,
                     export_path=export_path,
                 )
 def _pick_first_test_dataset_key(opt: Dict[str, Any]) -> str:

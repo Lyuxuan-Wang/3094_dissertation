@@ -8,7 +8,7 @@ DATA_ROOT = Path("data")
 METADATA_PATH = Path("metadata/dataset.csv")
 
 SCALE = 4
-GAUSSIAN_SIGMA = 10
+GAUSSIAN_SIGMAS = [10, 25]
 RENDER_SPPS = [16, 32]
 
 def load_img(path):
@@ -83,16 +83,17 @@ def generate_dataset():
                     lr.shape[1], lr.shape[0], filename, str(lr_path)
                 ])
 
-                # Gaussian Noise
-                noise_path = scene_dir / f"Noise_gaussian_{GAUSSIAN_SIGMA}" / filename
-                save_img(add_gaussian_noise(gt_path, GAUSSIAN_SIGMA), noise_path)
+                # Gaussian Noise (per sigma; std dev in 0–255 pixel units)
+                for gn_sigma in GAUSSIAN_SIGMAS:
+                    noise_path = scene_dir / f"Noise_gaussian_{gn_sigma}" / filename
+                    save_img(add_gaussian_noise(gt_path, gn_sigma), noise_path)
 
-                writer.writerow([
-                    f"{scene}_{view_id}_GN", scene, view_id,
-                    "GN", "-", GAUSSIAN_SIGMA, "-",
-                    w, h, filename,
-                    str(noise_path)
-                ])
+                    writer.writerow([
+                        f"{scene}_{view_id}_GN_{gn_sigma}", scene, view_id,
+                        "GN", "-", gn_sigma, "-",
+                        w, h, filename,
+                        str(noise_path)
+                    ])
 
                 # Render Noise
                 for spp in RENDER_SPPS:
