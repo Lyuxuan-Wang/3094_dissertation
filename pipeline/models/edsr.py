@@ -20,7 +20,7 @@ def run_edsr(
         gt_image: str | Path,
         export_path: str | Path,
         tile = 128,
-        tile_pad = 10,
+        tile_pad = 32,
         exp_name: Optional[str] = None
         ) -> EDSRRunResult:
     """
@@ -65,34 +65,55 @@ def run_edsr(
         shutil.copy2(lq_image, tmp_lq / lq_image.name)
         shutil.copy2(gt_image, tmp_gt / gt_image.name)
 
-        ds_cfg["lq"] = str(tmp_lq)
-        ds_cfg["gt"] = str(tmp_gt)
+        ds_cfg["dataroot_lq"] = str(tmp_lq)
+        ds_cfg["dataroot_gt"] = str(tmp_gt)
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
             yaml.dump(yml, f)
             temp_yml_path = Path(f.name)
         try:
             cmd = ["python", "basicsr/test.py", "-opt", str(temp_yml_path)]
-            subprocess.run(cmd, cwd=str(basicsr_root), check=True)
+            result = subprocess.run(cmd, cwd=str(basicsr_root), capture_output=True, text=True)
+            print(result.stdout)
+            print(result.stderr)
+            if result.returncode != 0:
+                raise RuntimeError("BasicSR failed, see output above")
 
-            result_root = basicsr_root / "results" / exp_name / "visualization"
+            result_root = basicsr_root / "results" / yml["name"] / "visualization"
 
             dataset_name = ds_cfg.get("name", None)
             res_dir = result_root / dataset_name if dataset_name else result_root
 
-            result_image = res_dir / lq_image.name
-            if not  result_image.exists():
+            if res_dir.exists():
+                print("res_dir contents: " + str(list(res_dir.iterdir())))
+            else:
+                print("res_dir does not exist: " + str(res_dir))
+
+            suffix = yml.get("val", {}).get("suffix", None)
+            if suffix is None or suffix == "~":
+                suffix = yml["name"]
+
+            if suffix:
+                result_image = res_dir / (lq_image.stem + "_" + suffix + lq_image.suffix)
+            else:
+                result_image = res_dir / lq_image.name
+
+            if not result_image.exists():
                 raise RuntimeError(f"Cannot find result image at {result_image}")
 
             export_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(result_image, export_path)
+
+            result_root = basicsr_root / "results"
+            for d in result_root.iterdir():
+                if d.is_dir() and d.name.startswith(yml["name"]):
+                    shutil.rmtree(d, ignore_errors=True)
 
         finally:
             try:
                 os.remove(temp_yml_path)
             except OSError:
                 pass
-
     return EDSRRunResult(
                     exp_name=exp_name,
                     gt_path=gt_image,

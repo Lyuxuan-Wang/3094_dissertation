@@ -61,7 +61,7 @@ def step_run_evaluate():
     records = []
     for i in range(len(results)):
         row = results.iloc[i]
-        record = evaluate(row, dataset)
+        record = evaluate(row, dataset, dataroot=str(PROJECT_ROOT))
         records.append(record)
 
     eval_df = pd.DataFrame(records)

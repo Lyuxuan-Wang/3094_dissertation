@@ -1,3 +1,4 @@
+import numpy as np
 from skimage import io
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
@@ -12,9 +13,13 @@ def load_img(path):
     :return: image
     """
     img = io.imread(path)
+    print(f"{path}: dtype={img.dtype}, max={img.max()}")
     if img.ndim == 3 and img.shape[-1] == 4:
         img = img[..., :3]
-    img = img / 255.0
+    if img.dtype == np.uint16:
+        img = img / 65535.0
+    else:
+        img = img / 255.0
     return img
 
 def compute_psnr(gt, pred):
@@ -45,9 +50,9 @@ def find_GT(
     :param dataset: Full dataset.csv DataFrame
     :return: The first matching ground truth image row
     """
-    task = str(result_row.task).lower()
-    scene = result_row.scene
-    view_id = result_row.view_id
+    task = str(result_row["task"]).lower()
+    scene = result_row["scene"]
+    view_id = result_row["view_id"]
 
     candidates = dataset[
         (dataset["scene"] == scene) &
@@ -58,13 +63,9 @@ def find_GT(
         return None
 
     if task == "sr":
-        gt = candidates[candidates["type"].str.upper() == "HR"]
-    elif task == "denoise":
-        gt = candidates[candidates["type"].str.upper().isin(["GT", "CLEAN"])]
-        if gt.empty:
-            gt = candidates[candidates["type"].str.upper() == "HR"]
+        gt = candidates[candidates["type"].str.upper() == "GT"]
     else:
-        gt = candidates[candidates["type"].str.upper().isin(["GT", "CLEAN", "HR"])]
+        gt = candidates[candidates["type"].str.upper().isin(["GT", "CLEAN"])]
 
     return gt.iloc[0] if not gt.empty else None
 
@@ -74,19 +75,19 @@ def make_record(
         ssim: float | None,
 ) -> dict:
     return {
-        "id": row.id,
-        "filename": row.filename,
+        "id": row["id"],
+        "filename": row["filename"],
 
-        "scene": row.scene,
-        "view_id": row.view_id,
+        "scene": row["scene"],
+        "view_id": row["view_id"],
 
-        "input_type": row.input_type,
-        "scale": row.scale,
-        "sigma": row.sigma,
-        "spp": row.spp,
+        "input_type": row["input_type"],
+        "scale": row["scale"],
+        "sigma": row["sigma"],
+        "spp": row["spp"],
 
-        "model": row.model,
-        "task": row.task,
+        "model": row["model"],
+        "task": row["task"],
 
         "psnr": round(psnr, 3) if psnr is not None else None,
         "ssim": round(ssim, 3) if ssim is not None else None,
