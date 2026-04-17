@@ -12,7 +12,7 @@ from pipeline.models.edsr import run_edsr
 SCRIPTS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPTS_DIR.parent
 METADATA_DIR = PROJECT_ROOT / "metadata"
-RESULTS_DIR = METADATA_DIR / "results.csv"
+RESULTS_CSV = METADATA_DIR / "results.csv"
 
 CSV_FIELDS = [
     "id",
@@ -36,8 +36,8 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 def append_csv(row: dict) -> None:
     METADATA_DIR.mkdir(parents=True, exist_ok=True)
-    write_header = not RESULTS_DIR.exists()
-    with open(RESULTS_DIR, "a", newline="") as f:
+    write_header = not RESULTS_CSV.exists() or RESULTS_CSV.stat().st_size == 0
+    with open(RESULTS_CSV, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         if write_header:
             writer.writeheader()

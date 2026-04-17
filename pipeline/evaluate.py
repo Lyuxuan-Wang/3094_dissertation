@@ -13,7 +13,6 @@ def load_img(path):
     :return: image
     """
     img = io.imread(path)
-    print(f"{path}: dtype={img.dtype}, max={img.max()}")
     if img.ndim == 3 and img.shape[-1] == 4:
         img = img[..., :3]
     if img.dtype == np.uint16:
@@ -50,7 +49,6 @@ def find_GT(
     :param dataset: Full dataset.csv DataFrame
     :return: The first matching ground truth image row
     """
-    task = str(result_row["task"]).lower()
     scene = result_row["scene"]
     view_id = result_row["view_id"]
 
@@ -62,11 +60,7 @@ def find_GT(
     if candidates.empty:
         return None
 
-    if task == "sr":
-        gt = candidates[candidates["type"].str.upper() == "GT"]
-    else:
-        gt = candidates[candidates["type"].str.upper().isin(["GT", "CLEAN"])]
-
+    gt = candidates[candidates["type"].str.upper() == "GT"]
     return gt.iloc[0] if not gt.empty else None
 
 def make_record(

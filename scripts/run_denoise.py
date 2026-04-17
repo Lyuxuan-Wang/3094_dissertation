@@ -10,10 +10,7 @@ sys.path.append(str(pr))
 from pipeline.models.ffdnet import FFDNet
 from pipeline.CBM3D import denoise as CBM3D
 
-# write metadata while running
-# denoise
-# MC 16 / 32
-# Gaussian： σ = 10 / 25
+# read dataset.csv, run CBM3D and FFDNet for each input, and append the result path to metadata/results.csv.
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPTS_DIR.parent
@@ -22,7 +19,7 @@ RESULTS_CSV = METADATA_DIR / "results.csv"
 
 FFDNET_PATH = PROJECT_ROOT / "models/KAIR/model_zoo/ffdnet_color.pth"
 
-GAUSSIAN_SIGMAS = [10, 25]
+GAUSSIAN_SIGMAS = [10, 25]  # align with the sigma in the dataset
 
 CSV_FIELDS = [
     "id",
@@ -42,10 +39,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 def append_csv(row: dict) -> None:
     METADATA_DIR.mkdir(parents=True, exist_ok=True)
-    write_head = not RESULTS_CSV.exists()
+    write_header = not RESULTS_CSV.exists() or RESULTS_CSV.stat().st_size == 0
     with open(RESULTS_CSV, mode="a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
-        if write_head:
+        if write_header:
             writer.writeheader()
         writer.writerow(row)
 
@@ -53,25 +50,26 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # grounp by (scene, view_id)
     groups = {}
     with open(dataset_csv, newline="") as f:
         for row in csv.DictReader(f):
             key = (row["scene"], row["view_id"])
             if key not in groups:
                 groups[key] = {}
-            groups[key][row["type"]] = row
+            if row["type"] == "GN":
+                groups[key][("GN", str(row["sigma"]))] = row
+            else:
+                groups[key][row["type"]] = row
 
     for key in groups:
         scene = key[0]
         view_id = key[1]
         rows = groups[key]
 
+        # Gaussian noise
         for gn_sigma in GAUSSIAN_SIGMAS:
-            gn_row = None
-            for r in rows.values():
-                if r["type"] == "GN" and str(r["sigma"]) == str(gn_sigma):
-                    gn_row = r
-                    break
+            gn_row = rows.get(("GN", str(gn_sigma)))
             if gn_row is None:
                 continue
 
@@ -94,7 +92,7 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
                 "sigma": sigma,
                 "spp": "-",
                 "model": "cbm3d",
-                "task": "denoise",
+                "task": "DN",
                 "filename": cbm3d_out_path.name,
                 "path": str(cbm3d_out_path),
                 "experiment_name": experiment_name
@@ -119,7 +117,7 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
                 "sigma": sigma,
                 "spp": "-",
                 "model": "ffdnet",
-                "task": "denoise",
+                "task": "DN",
                 "filename": ffdnet_out_path.name,
                 "path": str(ffdnet_out_path),
                 "experiment_name": experiment_name
@@ -153,7 +151,7 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
                 "sigma": "-",
                 "spp": spp,
                 "model": "cbm3d",
-                "task": "denoise",
+                "task": "DN",
                 "filename": cbm3d_out_path.name,
                 "path": str(cbm3d_out_path),
                 "experiment_name": experiment_name
@@ -178,7 +176,7 @@ def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "den
                 "sigma": "-",
                 "spp": spp,
                 "model": "ffdnet",
-                "task": "denoise",
+                "task": "DN",
                 "filename": ffdnet_out_path.name,
                 "path": str(ffdnet_out_path),
                 "experiment_name": experiment_name
