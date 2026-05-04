@@ -47,10 +47,16 @@ def append_csv(row: dict) -> None:
         writer.writerow(row)
 
 def run_denoise(dataset_csv: Path, output_dir: Path, experiment_name: str = "denoise") -> None:
+    """
+    :param dataset_csv: read from dataset_csv
+    :param output_dir: results/DN
+    :param experiment_name: denoise
+    :return: None
+    """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # grounp by (scene, view_id)
+    # group by (scene, view_id)
     groups = {}
     with open(dataset_csv, newline="") as f:
         for row in csv.DictReader(f):

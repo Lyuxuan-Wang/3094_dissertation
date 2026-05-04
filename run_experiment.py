@@ -69,7 +69,7 @@ def step_run_evaluate():
     print("Evaluation written")
 
 if __name__ == "__main__":
-    #step_generate()
+    step_generate()
     step_run_denoise()
     step_run_sr()
     step_run_evaluate()
